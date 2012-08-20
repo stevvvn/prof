@@ -11,5 +11,8 @@
 *.la
 *.a
 
+# test binary
+test
+
 # VIM swap
 .*.sw?
