@@ -1,7 +1,7 @@
 prof
 ====
 
-Tiny and crappy profiler for C++0x code
+Tiny and crappy profiler for C++0x code running on OS X or Linux
 
 Usage
 -----
