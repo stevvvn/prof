@@ -15,8 +15,8 @@ void testFun(int secs) {
 	PROF_EXIT();
 }
 
-int main(int, char**) {
-	PROF_ENTER(main, 1, 2, "asdf");
+int main(int argc, char** argv) {
+	PROF_ENTER(main, argc, argv);
 	testFun(1);
 	testFun(4);
 	PROF_EXIT();
