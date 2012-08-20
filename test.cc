@@ -17,7 +17,7 @@ void testFun(int secs) {
 int main(int argc, char** argv) {
 	PROF_ENTER(main, argc, argv);
 	// profile entries span their scope. if there is not already an appropriate 
-	// scope (say, an if (...) {} block or a function body, you can introduce 
+	// scope (say, an if (...) {} block or a function body), you can introduce 
 	// one with braces
 	{ 
 		PROF_ENTER(main1);
