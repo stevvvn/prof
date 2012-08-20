@@ -194,16 +194,7 @@ void Engine::summaryReport() {
 		sortedTimes.push_back(*ci);
 	}
 	std::sort(sortedTimes.begin(), sortedTimes.end(), [](const std::pair<std::string, timespec>& a, const std::pair<std::string, timespec>& b) -> bool {
-		if (a.second.tv_sec > b.second.tv_sec) {
-			return true;
-		}
-		if (a.second.tv_sec < b.second.tv_sec) {
-			return false;
-		}
-		if (a.second.tv_nsec > b.second.tv_nsec) {
-			return true;
-		}
-		return false;
+		return a.second.tv_sec > b.second.tv_sec || (a.second.tv_sec == b.second.tv_sec && a.second.tv_nsec > b.second.tv_nsec);
 	});
 	for (std::vector<std::pair<std::string, timespec> >::const_iterator ci = sortedTimes.begin(); ci != sortedTimes.end(); ++ci) {
 		std::cout << ci->first << " - " << timeSpecToString(ci->second) << "\n";
