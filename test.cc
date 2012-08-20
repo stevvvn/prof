@@ -1,6 +1,5 @@
 #include "prof.h"
 
-/** silly function to test timing recursive methods */
 void sleepFor(int secs) {
 	PROF_ENTER(sleepFor, secs);
 	if (secs > 0) {
@@ -27,7 +26,7 @@ int main(int argc, char** argv) {
 		PROF_ENTER(main2);
 		testFun(4);
 	}
-	Prof::Engine::report();
-	Prof::Engine::summaryReport();
+	PROF_REPORT();
+	PROF_SUMMARY_REPORT();
 	return 0;
 }
