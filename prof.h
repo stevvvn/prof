@@ -1,3 +1,7 @@
+#ifdef PROFILE
+#define PROF_ENTER(name, args...) Prof::Engine::Token _PROF_TOK = Prof::Engine::enter(#name, __FILE__, __LINE__ , ## args);
+#define PROF_EXIT() Prof::Engine::exit(_PROF_TOK);
+
 #ifndef PROF_H
 #define PROF_H
 
@@ -174,12 +178,12 @@ private:
 
 }
 
-#ifdef PROFILE
-#define PROF_ENTER(name, args...) Prof::Engine::Token _PROF_TOK = Prof::Engine::enter(#name, __FILE__, __LINE__ , ## args);
-#define PROF_EXIT() Prof::Engine::exit(_PROF_TOK);
+#include "prof.cc"
+
+#endif
+
 #else
 #define PROF_ENTER(name, ...)
 #define PROF_EXIT()
 #endif
 
-#endif

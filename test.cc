@@ -1,4 +1,4 @@
-#include "prof.cc"
+#include "prof.h"
 
 void sleepFor(int secs) {
 	PROF_ENTER(sleepFor, secs);

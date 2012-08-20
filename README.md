@@ -5,7 +5,7 @@ Tiny and crappy profiler for C++0x code running on OS X or Linux
 
 Usage
 -----
- * Include prof.cc (nb: not .h)
+ * Include prof.h
  * Call PROF_ENTER(funcName, arg1, arg2, ...)
  * Call PROF_EXIT()
  * When your program is exiting, or at least when it's done with the part you're concerned about profiling, call Prof::Engine::report() or (more likely) Prof::Engine::summaryReport()
