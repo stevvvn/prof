@@ -188,5 +188,17 @@ private:
 
 #else
 #define PROF_ENTER(name, ...)
+
+namespace Prof
+{
+
+class Engine
+{
+public:
+	static void report() {}
+	static void summaryReport() {}
+};
+
+}
 #endif
 
