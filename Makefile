@@ -1,5 +1,5 @@
 LIBS := 
-ifeq ($(shell uname), 'Linux')
+ifeq ($(shell uname), Linux)
 	LIBS := -lrt
 endif
 test: test.cc prof.cc prof.h 
