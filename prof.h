@@ -177,7 +177,6 @@ private:
 
 	static std::vector<boost::shared_ptr<Context> > active;
 	static std::vector<boost::shared_ptr<Context> > records;
-	static size_t depth;
 };
 
 

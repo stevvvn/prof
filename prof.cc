@@ -210,7 +210,6 @@ void Engine::summaryReport() {
 	}
 }
 
-size_t Engine::depth = 0;
 std::vector<boost::shared_ptr<Context> > Engine::records;
 std::vector<boost::shared_ptr<Context> > Engine::active;
 
