@@ -157,7 +157,9 @@ std::string Engine::timeSpecToString(timespec ts) {
 }
 
 void Engine::totalTime(std::map<std::string, timespec>& times, std::map<std::string, bool> used, const boost::shared_ptr<Context> ctx) {
-	std::string key = ctx->getFile() + ":" + ctx->getName();
+	std::stringstream ss;
+	ss << ctx->getFile() << ":" << ctx->getLine() << " - " << ctx->getName();
+	std::string key = ss.str();
 	// recursive calls should not add time to outer call time
 	if (!used[key]) {
 		timespec ex = times[key];
