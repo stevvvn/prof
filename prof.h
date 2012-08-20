@@ -1,22 +1,14 @@
 #ifndef PROF_H
 #define PROF_H
 
-#ifndef PROF_API_H
-#define PROF_API_H
-
 #ifdef PROFILE
 #define PROF_ENTER(name, args...) Prof::ScopeCanary _PROF_CAN = Prof::Engine::enter(#name, __FILE__, __LINE__ , ## args);
 #define PROF_REPORT() Prof::Engine::report();
 #define PROF_SUMMARY_REPORT() Prof::Engine::summaryReport();
-
 #else
-
 #define PROF_ENTER(name, ...)
 #define PROF_REPORT()
 #define PROF_SUMMARY_REPORT()
-
-#endif
-
 #endif
 
 #include <string>
@@ -25,7 +17,11 @@
 #include <sstream>
 #include <boost/shared_ptr.hpp>
 #include <sys/time.h>
-
+#ifdef __MACH__
+	#include <mach/mach_time.h>
+	#define ORWL_NANO (+1.0E-9)
+	#define ORWL_GIGA UINT64_C(1000000000)
+#endif
 
 namespace Prof
 {

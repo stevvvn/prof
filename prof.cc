@@ -8,12 +8,6 @@
 #include <sstream>
 #include <boost/format.hpp>
 
-#ifdef __MACH__
-	#include <mach/mach_time.h>
-	#define ORWL_NANO (+1.0E-9)
-	#define ORWL_GIGA UINT64_C(1000000000)
-#endif
-
 namespace Prof 
 {
 
