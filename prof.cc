@@ -1,3 +1,6 @@
+#ifndef PROF_CC
+#define PROF_CC
+
 #include "prof.h"
 
 #include <iostream>
@@ -22,47 +25,16 @@ ScopeCanary::~ScopeCanary() {
 	ctx->markEnd();
 }
 
-template <typename ... Args>
-Context::Context(const std::string& name, const std::string& file, const size_t line, bool root, const Args&... args) : 
-	name(name), file(file), line(line), ts(), args(), orwl_timestart(0), orwl_timebase(0.0), children(), root(root), ended(false), clockType(0) {
-	std::stringstream ss;
-	stringify(ss, args...);
-	ts.tv_sec = 0;
-	ts.tv_nsec = 0;
-#ifdef CLOCK_MONOTONIC_RAW
-	clockType = CLOCK_MONOTONIC_RAW;
-	clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-#elif CLOCK_MONOTONIC
-	clockType = CLOCK_MONOTONIC;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-#elif __MACH__
-	mach_timebase_info_data_t tb;
-	mach_timebase_info(&tb);
-	orwl_timebase = tb.numer;
-	orwl_timebase /= tb.denom;
-	orwl_timestart = mach_absolute_time();
-#else
-	#error "not sure how to get monotonic time on this platform"
-#endif
-}
-
-template <typename T, typename ... Args>
-void Context::stringify(std::stringstream& ss, const T& val, const Args&... args) {
-	ss << val;
-	this->args.push_back(ss.str());
-	ss.str("");
-	stringify(ss, args...);
-}
-
-void Context::stringify(std::stringstream&) {
-}
-
 void Context::markEnd() {
 	if (!ended) {
 		ended = true;
 #if defined CLOCK_MONOTONIC_RAW || defined CLOCK_MONOTONIC
 		timespec after;
-		clock_gettime(clockType, &after);
+#ifdef CLOCK_MONOTONIC_RAW
+		clock_gettime(CLOCK_MONOTONIC_RAW, &after);
+#else
+		clock_gettime(CLOCK_MONOTONIC, &after);
+#endif
 		ts.tv_sec = after.tv_sec - ts.tv_sec;
 		ts.tv_nsec = after.tv_nsec - ts.tv_nsec;
 		if (ts.tv_nsec < 0) {
@@ -115,18 +87,6 @@ std::string Context::getArgumentString() const {
 
 const std::vector<boost::shared_ptr<Context> >& Context::getChildren() const {
 	return children;
-}
-
-template <typename ... Args>
-ScopeCanary Engine::enter(const std::string& name, const std::string& file, size_t line, const Args&... args) {
-	bool isRoot = active.empty();
-	boost::shared_ptr<Context> ctx(new Context(name, file, line, isRoot, args...));
-	if (!isRoot) {
-		active.back()->pushChild(ctx);
-	}
-	active.push_back(ctx);
-	records.push_back(ctx);
-	return ScopeCanary(ctx);
 }
 
 void Engine::exit() {
@@ -205,3 +165,4 @@ std::vector<boost::shared_ptr<Context> > Engine::records;
 std::vector<boost::shared_ptr<Context> > Engine::active;
 
 }
+#endif

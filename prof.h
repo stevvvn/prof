@@ -1,9 +1,23 @@
-#ifdef PROFILE
-
 #ifndef PROF_H
 #define PROF_H
 
+#ifndef PROF_API_H
+#define PROF_API_H
+
+#ifdef PROFILE
 #define PROF_ENTER(name, args...) Prof::ScopeCanary _PROF_CAN = Prof::Engine::enter(#name, __FILE__, __LINE__ , ## args);
+#define PROF_REPORT() Prof::Engine::report();
+#define PROF_SUMMARY_REPORT() Prof::Engine::summaryReport();
+
+#else
+
+#define PROF_ENTER(name, ...)
+#define PROF_REPORT()
+#define PROF_SUMMARY_REPORT()
+
+#endif
+
+#endif
 
 #include <string>
 #include <map>
@@ -33,7 +47,26 @@ public:
 	 * @return Token that should be passed to the corresponding exit() call
 	 */
 	template <typename ... Args>
-	Context(const std::string& name, const std::string& file, const size_t line, bool root, const Args&... args);
+	Context(const std::string& name, const std::string& file, const size_t line, bool root, const Args&... args) : 
+	name(name), file(file), line(line), ts(), args(), orwl_timestart(0), orwl_timebase(0.0), children(), root(root), ended(false) {
+		std::stringstream ss;
+		stringify(ss, args...);
+		ts.tv_sec = 0;
+		ts.tv_nsec = 0;
+#if defined CLOCK_MONOTONIC_RAW 
+		clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
+#elif defined CLOCK_MONOTONIC
+		clock_gettime(CLOCK_MONOTONIC, &ts);
+#elif defined __MACH__
+		mach_timebase_info_data_t tb;
+		mach_timebase_info(&tb);
+		orwl_timebase = tb.numer;
+		orwl_timebase /= tb.denom;
+		orwl_timestart = mach_absolute_time();
+#else
+		#error "not sure how to get monotonic time on this platform"
+#endif
+	}
 
 	/**
 	 * Compare current time to stored start time
@@ -93,12 +126,17 @@ private:
 	 * @param args further vals
 	 */
 	template <typename T, typename ... Args>
-	void stringify(std::stringstream& ss, const T& val, const Args&... args);
+	void stringify(std::stringstream& ss, const T& val, const Args&... args) {
+		ss << val;
+		this->args.push_back(ss.str());
+		ss.str("");
+		stringify(ss, args...);
+	}
 
 	/**
 	 * Stop point for recursive stringify calls when there are no more varargs
 	 */
-	void stringify(std::stringstream&);
+	void stringify(std::stringstream&) {}
 
 	std::string name;
 	std::string file;
@@ -109,7 +147,6 @@ private:
 	double orwl_timebase;
 	std::vector<boost::shared_ptr<Context> > children;
 	bool root, ended;
-	unsigned int clockType;
 };
 
 class ScopeCanary
@@ -139,7 +176,16 @@ public:
 	 * @return Token that should be passed to the corresponding exit() call
 	 */
 	template <typename ... Args>
-	static ScopeCanary enter(const std::string& name, const std::string& file, size_t line, const Args&... args);
+	static ScopeCanary enter(const std::string& name, const std::string& file, size_t line, const Args&... args) {
+		bool isRoot = active.empty();
+		boost::shared_ptr<Context> ctx(new Context(name, file, line, isRoot, args...));
+		if (!isRoot) {
+			active.back()->pushChild(ctx);
+		}
+		active.push_back(ctx);
+		records.push_back(ctx);
+		return ScopeCanary(ctx);
+	}
 
 	static void exit();
 
@@ -182,23 +228,5 @@ private:
 
 }
 
-#include "prof.cc"
-
-#endif
-
-#else
-#define PROF_ENTER(name, ...)
-
-namespace Prof
-{
-
-class Engine
-{
-public:
-	static void report() {}
-	static void summaryReport() {}
-};
-
-}
 #endif
 
