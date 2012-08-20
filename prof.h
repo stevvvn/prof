@@ -105,6 +105,7 @@ private:
 	double orwl_timebase;
 	std::vector<boost::shared_ptr<Context> > children;
 	bool root;
+	unsigned int clockType;
 };
 
 class Engine

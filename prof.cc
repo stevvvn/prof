@@ -16,15 +16,17 @@ namespace Prof
 
 template <typename ... Args>
 Context::Context(const std::string& name, const std::string& file, const size_t line, bool root, const Args&... args) : 
-	name(name), file(file), line(line), ts(), args(), orwl_timestart(0), orwl_timebase(0.0), children(), root(root) {
+	name(name), file(file), line(line), ts(), args(), orwl_timestart(0), orwl_timebase(0.0), children(), root(root), clockType(0) {
 	std::stringstream ss;
 	stringify(ss, args...);
 	ts.tv_sec = 0;
 	ts.tv_nsec = 0;
 #ifdef CLOCK_MONOTONIC_RAW
-	clock_settime(CLOCK_MONOTONIC_RAW, &ts);
+	clockType = CLOCK_MONOTONIC_RAW;
+	clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
 #elif CLOCK_MONOTONIC
-	clock_settime(CLOCK_MONOTONIC, &ts);
+	clockType = CLOCK_MONOTONIC;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
 #elif __MACH__
 	mach_timebase_info_data_t tb;
 	mach_timebase_info(&tb);
@@ -48,10 +50,15 @@ void Context::stringify(std::stringstream&) {
 }
 
 void Context::markEnd() {
-#ifdef CLOCK_MONOTONIC_RAW
-	clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-#elif CLOCK_MONOTONIC
-	clock_gettime(CLOCK_MONOTONIC, &ts);
+#if defined CLOCK_MONOTONIC_RAW || defined CLOCK_MONOTONIC
+	timespec after;
+	clock_gettime(clockType, &after);
+	ts.tv_sec = after.tv_sec - ts.tv_sec;
+	ts.tv_nsec = after.tv_nsec - ts.tv_nsec;
+	if (ts.tv_nsec < 0) {
+		--ts.tv_sec;
+		ts.tv_nsec = 1000000000 + ts.tv_nsec;
+	}
 #elif __MACH__
 	double diff = (mach_absolute_time() - orwl_timestart) * orwl_timebase;
 	ts.tv_sec = diff * ORWL_NANO;
