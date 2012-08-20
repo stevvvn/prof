@@ -1,9 +1,9 @@
 #ifdef PROFILE
-#define PROF_ENTER(name, args...) Prof::ScopeCanary _PROF_CAN = Prof::Engine::enter(#name, __FILE__, __LINE__ , ## args);
-#define PROF_EXIT()
 
 #ifndef PROF_H
 #define PROF_H
+
+#define PROF_ENTER(name, args...) Prof::ScopeCanary _PROF_CAN = Prof::Engine::enter(#name, __FILE__, __LINE__ , ## args);
 
 #include <string>
 #include <map>
@@ -189,6 +189,5 @@ private:
 
 #else
 #define PROF_ENTER(name, ...)
-#define PROF_EXIT()
 #endif
 
