@@ -5,16 +5,16 @@ Tiny and crappy profiler for C++0x code
 
 Usage
 -----
-Include prof.cc (nb: not .h. The compiler needs to know which templates to instantiate for the arguments you pass to to PROF_ENTER, and it's not immediately clear to me how to do that in a header/shared library implementation)
-Call PROF_ENTER(funcName, arg1, arg2, ...)
-Call PROF_EXIT()
-When your program is exiting, or at least when it's done with the part you're concerned about profiling, call Prof::Engine::report() or (more likely) Prof::Engine::summaryReport()
-Compile with -DPROFILE to enable
+ * Include prof.cc (nb: not .h. The compiler needs to know which templates to instantiate for the arguments you pass to to PROF_ENTER, and it's not immediately clear to me how to do that in a header/shared library implementation)
+ * Call PROF_ENTER(funcName, arg1, arg2, ...)
+ * Call PROF_EXIT()
+ * When your program is exiting, or at least when it's done with the part you're concerned about profiling, call Prof::Engine::report() or (more likely) Prof::Engine::summaryReport()
+ * Compile with -DPROFILE to enable
 
 Example
 -------
-<code>
-#include "prof.cc"
+<pre><code>
+\#include "prof.cc"
 
 void sleepFor(int secs) {
 	PROF_ENTER(sleepFor, secs);
@@ -40,8 +40,9 @@ int main(int argc, char** argv) {
 	Prof::Engine::summaryReport();
 	return 0;
 }
-</code>
+</code></pre>
 
+<pre>
 <code>
 g++ -Wall -Wextra -Weffc++ -std=c++0x -DPROFILE -o test test.cc
 ./test
@@ -59,3 +60,4 @@ test.cc:main - 5.001148108
 test.cc:testFun - 5.001119966
 test.cc:sleepFor - 5.001093391
 </code>
+</pre>
