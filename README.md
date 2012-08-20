@@ -5,7 +5,7 @@ Tiny and crappy profiler for C++0x code
 
 Usage
 -----
- * Include prof.cc (nb: not .h. The compiler needs to know which templates to instantiate for the arguments you pass to to PROF_ENTER, and it's not immediately clear to me how to do that in a header/shared library implementation)
+ * Include prof.cc (nb: not .h)
  * Call PROF_ENTER(funcName, arg1, arg2, ...)
  * Call PROF_EXIT()
  * When your program is exiting, or at least when it's done with the part you're concerned about profiling, call Prof::Engine::report() or (more likely) Prof::Engine::summaryReport()
