@@ -1,6 +1,6 @@
 #ifdef PROFILE
-#define PROF_ENTER(name, args...) Prof::Engine::Token _PROF_TOK = Prof::Engine::enter(#name, __FILE__, __LINE__ , ## args);
-#define PROF_EXIT() Prof::Engine::exit(_PROF_TOK);
+#define PROF_ENTER(name, args...) Prof::ScopeCanary _PROF_CAN = Prof::Engine::enter(#name, __FILE__, __LINE__ , ## args);
+#define PROF_EXIT()
 
 #ifndef PROF_H
 #define PROF_H
@@ -108,8 +108,17 @@ private:
 	uint64_t orwl_timestart;
 	double orwl_timebase;
 	std::vector<boost::shared_ptr<Context> > children;
-	bool root;
+	bool root, ended;
 	unsigned int clockType;
+};
+
+class ScopeCanary
+{
+public:
+	ScopeCanary(boost::shared_ptr<Context> ctx);
+	~ScopeCanary();
+private:
+	boost::shared_ptr<Context> ctx;
 };
 
 class Engine
@@ -130,13 +139,9 @@ public:
 	 * @return Token that should be passed to the corresponding exit() call
 	 */
 	template <typename ... Args>
-	static Token enter(const std::string& name, const std::string& file, size_t line, const Args&... args);
+	static ScopeCanary enter(const std::string& name, const std::string& file, size_t line, const Args&... args);
 
-	/**
-	 * Stop recording the identified block of time
-	 * @param t token from enter() identifying the block
-	 */
-	static void exit(Token t);
+	static void exit();
 
 	/**
 	 * Output a list of functions ordered by the total time they took
@@ -171,10 +176,10 @@ private:
 	static void totalTime(std::map<std::string, timespec>& times, std::map<std::string, bool> used, const boost::shared_ptr<Context> ctx);
 
 	static std::vector<boost::shared_ptr<Context> > active;
-	static std::map<Token, boost::shared_ptr<Context> > records;
-	static Token calls;
+	static std::vector<boost::shared_ptr<Context> > records;
 	static size_t depth;
 };
+
 
 }
 

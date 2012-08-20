@@ -6,36 +6,42 @@ Tiny and crappy profiler for C++0x code running on OS X or Linux
 Usage
 -----
  * Include prof.h
- * Call PROF_ENTER(funcName, arg1, arg2, ...)
- * Call PROF_EXIT()
+ * Call PROF_ENTER(funcName, arg1, arg2, ...) in the scope you want to test. funcName is arbitrary, you can use any identifier that makes sense
  * When your program is exiting, or at least when it's done with the part you're concerned about profiling, call Prof::Engine::report() or (more likely) Prof::Engine::summaryReport()
  * Compile with -DPROFILE to enable
 
 Example
 -------
 <pre><code>
-\#include "prof.cc"
+\#include "prof.h"
 
+/** silly function to test timing recursive methods */
 void sleepFor(int secs) {
 	PROF_ENTER(sleepFor, secs);
 	if (secs > 0) {
 		sleep(1);
 		sleepFor(secs - 1);
 	}
-	PROF_EXIT();
 }
 
 void testFun(int secs) {
 	PROF_ENTER(testFun, secs);
 	sleepFor(secs);
-	PROF_EXIT();
 }
 
 int main(int argc, char** argv) {
 	PROF_ENTER(main, argc, argv);
-	testFun(1);
-	testFun(4);
-	PROF_EXIT();
+	// profile entries span their scope. if there is not already an appropriate 
+	// scope (say, an if (...) {} block or a function body, you can introduce 
+	// one with braces
+	{ 
+		PROF_ENTER(main1);
+		testFun(1);
+	}
+	{
+		PROF_ENTER(main2);
+		testFun(4);
+	}
 	Prof::Engine::report();
 	Prof::Engine::summaryReport();
 	return 0;
@@ -44,20 +50,25 @@ int main(int argc, char** argv) {
 
 <pre>
 <code>
-g++ -Wall -Wextra -Weffc++ -std=c++0x -DPROFILE -o test test.cc
+$ make test
+g++ -Wall -Wextra -Weffc++ -std=c++0x  -DPROFILE -o test test.cc
 ./test
-test.cc:19 - main(1, 0x7fff5fbff930) - 5.001148108
-        test.cc:13 - testFun(1) - 1.000185503
-                test.cc:4 - sleepFor(1) - 1.000176334
-                        test.cc:4 - sleepFor(0) - 0.000009963
-        test.cc:13 - testFun(4) - 4.000934463
-                test.cc:4 - sleepFor(4) - 4.000917057
-                        test.cc:4 - sleepFor(3) - 3.000720966
-                                test.cc:4 - sleepFor(2) - 2.000489546
-                                        test.cc:4 - sleepFor(1) - 1.000320839
-                                                test.cc:4 - sleepFor(0) - 0.000009414
-test.cc:main - 5.001148108
-test.cc:testFun - 5.001119966
-test.cc:sleepFor - 5.001093391
+test.cc:17 - main(1, 0x7fff5fbff930) - 5.001346541
+        test.cc:19 - main1() - 1.000321061
+                test.cc:12 - testFun(1) - 1.000311560
+                        test.cc:4 - sleepFor(1) - 1.000303063
+                                test.cc:4 - sleepFor(0) - 0.000021584
+        test.cc:23 - main2() - 4.000996166
+                test.cc:12 - testFun(4) - 4.000972488
+                        test.cc:4 - sleepFor(4) - 4.000954693
+                                test.cc:4 - sleepFor(3) - 3.000625934
+                                        test.cc:4 - sleepFor(2) - 2.000475269
+                                                test.cc:4 - sleepFor(1) - 1.000181852
+                                                        test.cc:4 - sleepFor(0) - 0.000011693
+test.cc:main - 5.001346541
+test.cc:testFun - 5.001284048
+test.cc:sleepFor - 5.001257756
+test.cc:main2 - 4.000996166
+test.cc:main1 - 1.000321061
 </code>
 </pre>

@@ -14,9 +14,17 @@
 namespace Prof 
 {
 
+ScopeCanary::ScopeCanary(boost::shared_ptr<Context> ctx) : ctx(ctx) {
+}
+
+ScopeCanary::~ScopeCanary() {
+	Engine::exit();
+	ctx->markEnd();
+}
+
 template <typename ... Args>
 Context::Context(const std::string& name, const std::string& file, const size_t line, bool root, const Args&... args) : 
-	name(name), file(file), line(line), ts(), args(), orwl_timestart(0), orwl_timebase(0.0), children(), root(root), clockType(0) {
+	name(name), file(file), line(line), ts(), args(), orwl_timestart(0), orwl_timebase(0.0), children(), root(root), ended(false), clockType(0) {
 	std::stringstream ss;
 	stringify(ss, args...);
 	ts.tv_sec = 0;
@@ -50,20 +58,23 @@ void Context::stringify(std::stringstream&) {
 }
 
 void Context::markEnd() {
+	if (!ended) {
+		ended = true;
 #if defined CLOCK_MONOTONIC_RAW || defined CLOCK_MONOTONIC
-	timespec after;
-	clock_gettime(clockType, &after);
-	ts.tv_sec = after.tv_sec - ts.tv_sec;
-	ts.tv_nsec = after.tv_nsec - ts.tv_nsec;
-	if (ts.tv_nsec < 0) {
-		--ts.tv_sec;
-		ts.tv_nsec = 1000000000 + ts.tv_nsec;
-	}
+		timespec after;
+		clock_gettime(clockType, &after);
+		ts.tv_sec = after.tv_sec - ts.tv_sec;
+		ts.tv_nsec = after.tv_nsec - ts.tv_nsec;
+		if (ts.tv_nsec < 0) {
+			--ts.tv_sec;
+			ts.tv_nsec = 1000000000 + ts.tv_nsec;
+		}
 #elif __MACH__
-	double diff = (mach_absolute_time() - orwl_timestart) * orwl_timebase;
-	ts.tv_sec = diff * ORWL_NANO;
-	ts.tv_nsec = diff - (ts.tv_sec * ORWL_GIGA);
+		double diff = (mach_absolute_time() - orwl_timestart) * orwl_timebase;
+		ts.tv_sec = diff * ORWL_NANO;
+		ts.tv_nsec = diff - (ts.tv_sec * ORWL_GIGA);
 #endif
+	}
 }
 
 void Context::pushChild(const boost::shared_ptr<Context> ctx) {
@@ -107,21 +118,19 @@ const std::vector<boost::shared_ptr<Context> >& Context::getChildren() const {
 }
 
 template <typename ... Args>
-Engine::Token Engine::enter(const std::string& name, const std::string& file, size_t line, const Args&... args) {
-	++calls;
+ScopeCanary Engine::enter(const std::string& name, const std::string& file, size_t line, const Args&... args) {
 	bool isRoot = active.empty();
 	boost::shared_ptr<Context> ctx(new Context(name, file, line, isRoot, args...));
 	if (!isRoot) {
 		active.back()->pushChild(ctx);
 	}
 	active.push_back(ctx);
-	records[calls] = ctx;
-	return calls;
+	records.push_back(ctx);
+	return ScopeCanary(ctx);
 }
 
-void Engine::exit(Engine::Token t) {
+void Engine::exit() {
 	active.pop_back();
-	records[t]->markEnd();
 }
 
 void Engine::stringify(boost::shared_ptr<Context> ctx, size_t depth) {
@@ -135,9 +144,10 @@ void Engine::stringify(boost::shared_ptr<Context> ctx, size_t depth) {
 }
 
 void Engine::report() {
-	for (std::map<Token, boost::shared_ptr<Context> >::const_iterator ci = records.begin(); ci != records.end(); ++ci) {
-		if (ci->second->isRoot()) {
-			stringify(ci->second, 0);
+	for (std::vector<boost::shared_ptr<Context> >::const_iterator ci = records.begin(); ci != records.end(); ++ci) {
+		if ((*ci)->isRoot()) {
+			(*ci)->markEnd();
+			stringify(*ci, 0);
 		}
 	}
 }
@@ -171,9 +181,10 @@ void Engine::totalTime(std::map<std::string, timespec>& times, std::map<std::str
 
 void Engine::summaryReport() {
 	std::map<std::string, timespec> times;
-	for (std::map<Token, boost::shared_ptr<Context> >::const_iterator ci = records.begin(); ci != records.end(); ++ci) {
-		if (ci->second->isRoot()) {
-			totalTime(times, std::map<std::string, bool>(), ci->second);
+	for (std::vector<boost::shared_ptr<Context> >::const_iterator ci = records.begin(); ci != records.end(); ++ci) {
+		if ((*ci)->isRoot()) {
+			(*ci)->markEnd();
+			totalTime(times, std::map<std::string, bool>(), *ci);
 		}
 	}
 	std::vector<std::pair<std::string, timespec> > sortedTimes;
@@ -197,9 +208,8 @@ void Engine::summaryReport() {
 	}
 }
 
-Engine::Token Engine::calls = 0;
 size_t Engine::depth = 0;
-std::map<Engine::Token, boost::shared_ptr<Context> > Engine::records;
+std::vector<boost::shared_ptr<Context> > Engine::records;
 std::vector<boost::shared_ptr<Context> > Engine::active;
 
 }
