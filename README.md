@@ -7,8 +7,8 @@ Usage
 -----
  * Include prof.h
  * Call PROF_ENTER(funcName, arg1, arg2, ...) in the scope you want to test. funcName is arbitrary, you can use any identifier that makes sense
- * When your program is exiting, or at least when it's done with the part you're concerned about profiling, call Prof::Engine::report() or (more likely) Prof::Engine::summaryReport()
- * Compile with -DPROFILE to enable
+ * When your program is exiting, or at least when it's done with the part you're concerned about profiling, call PROF_REPORT() or (more likely) PROF_SUMMARY_REPORT()
+ * Compile with -lprof, and use -DPROFILE to toggle profiling on
 
 Example
 -------
